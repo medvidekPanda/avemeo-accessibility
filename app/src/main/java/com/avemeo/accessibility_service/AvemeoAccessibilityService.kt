@@ -12,13 +12,9 @@ class AvemeoAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         val info = AccessibilityServiceInfo()
         info.apply {
-            eventTypes = AccessibilityEvent.TYPES_ALL_MASK
-            feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+            eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
             notificationTimeout = 0
-            flags = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS or
-                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
-                    AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
-                    AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+            flags = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
         }
         serviceInfo = info
     }
@@ -28,6 +24,10 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
     
     override fun onKeyEvent(event: KeyEvent?): Boolean {
+        if (event != null && event.action == KeyEvent.ACTION_DOWN) {
+            Log.d("AvemeoAccessibilityService", "Key event" + event.toString())
+        }
+
         event?.let {
             if (it.action == KeyEvent.ACTION_DOWN) {
                 val intent = Intent(this, AccessibilityBindingService::class.java)
@@ -39,6 +39,7 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+         Log.d("AvemeoAccessibilityService", "onAccessibilityEvent" + event.toString())
         event?.let {
             val intent = Intent(this, AccessibilityBindingService::class.java)
             intent.putExtra("eventType", it.eventType)

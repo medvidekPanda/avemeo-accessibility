@@ -3,6 +3,7 @@
     <permission
         android:name="com.avemeo.accessibility_service.PERMISSION"
         android:protectionLevel="normal" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -22,6 +23,8 @@
 
         <service
             android:name=".AccessibilityBindingService"
+            android:permission="com.avemeo.accessibility_service.PERMISSION"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.avemeo.accessibility_service.BIND" />
@@ -30,8 +33,8 @@
 
         <service
             android:name=".AvemeoAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>

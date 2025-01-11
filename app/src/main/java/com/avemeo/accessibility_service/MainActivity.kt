@@ -9,13 +9,11 @@ import android.provider.Settings
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        requestUsageStatsPermission(this)
-        val intent = Intent(this, AvemeoAccessibilityService::class.java)
-        startService(intent)
+        openAccessibilitySettings(this)
+        finish()
     }
 
-    private fun requestUsageStatsPermission(context: Context) {
+    private fun openAccessibilitySettings(context: Context) {
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         context.startActivity(intent)
     }
