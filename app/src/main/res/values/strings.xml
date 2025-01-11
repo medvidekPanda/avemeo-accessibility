@@ -1,0 +1,4 @@
+<resources>
+    <string name="accessibility_service_description">Custom Avemeo Accessibility Service</string>
+    <string name="accessibility_service_label">Avemeo Accessibility Service</string>
+</resources>
