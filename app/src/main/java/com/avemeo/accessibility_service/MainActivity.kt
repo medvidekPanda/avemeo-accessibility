@@ -9,7 +9,7 @@ import android.provider.Settings
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        openAccessibilitySettings(this)
+        //openAccessibilitySettings(this)
         finish()
     }
 

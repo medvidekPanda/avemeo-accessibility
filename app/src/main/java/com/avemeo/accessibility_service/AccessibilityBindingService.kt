@@ -5,12 +5,8 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.RemoteCallbackList
-import android.provider.Settings
 import android.util.Log
 import android.os.Handler
-import android.os.Looper
-import android.content.ComponentName
-import android.content.Context
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -22,19 +18,34 @@ class AccessibilityBindingService : Service() {
     private val callbacks = RemoteCallbackList<IAccessibilityCallback>()
     private var shouldReconnect = true
 
-    private     companion object {
+    private companion object {
         private const val NOTIFICATION_ID = 1
     }
 
     private val binder = object : IAccessibilityService.Stub() {
         override fun registerCallback(callback: IAccessibilityCallback) {
+            //Log.d("AvemeoAccessibility", "registerCallback bindingd")
             callbacks.register(callback)
         }
 
         override fun unregisterCallback(callback: IAccessibilityCallback) {
             callbacks.unregister(callback)
         }
+
+
+        override fun launchApp(packageName: String) {
+            try {
+                //Log.d("AvemeoAccessibility", "Successfully launched app pub: $packageName")
+                val intent = Intent(applicationContext, AvemeoAccessibilityService::class.java)
+                intent.action = "LAUNCH_APP_ACTION"
+                intent.putExtra("launch_package_name", packageName)
+                startService(intent)
+            } catch (e: Exception) {
+                Log.e("AvemeoAccessibility", "Failed to launch app: $packageName", e)
+            }
+        }
     }
+
 
     private val handlerThread = HandlerThread("AccessibilityEventThread").apply { start() }
     private val handler = Handler(handlerThread.looper)
@@ -71,7 +82,7 @@ class AccessibilityBindingService : Service() {
 
     private fun createNotification(): Notification {
         val channelId = "accessibility_service_channel"
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,

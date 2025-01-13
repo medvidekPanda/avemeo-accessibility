@@ -15,15 +15,26 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("/Users/janptacek/git-projects/keys/avemeo-klic.jks")
+            storePassword = "fP7@Nu{vkSCc:z*H8WUy/Q"
+            keyAlias = "avemeo-key"
+            keyPassword = "fP7@Nu{vkSCc:z*H8WUy/Q"
+        }
+    }
+
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -37,6 +48,5 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
 }
