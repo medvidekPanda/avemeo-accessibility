@@ -10,7 +10,6 @@ import android.os.Handler
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import android.os.HandlerThread
 
@@ -24,7 +23,7 @@ class AccessibilityBindingService : Service() {
 
     private val binder = object : IAccessibilityService.Stub() {
         override fun registerCallback(callback: IAccessibilityCallback) {
-            //Log.d("AvemeoAccessibility", "registerCallback bindingd")
+            Log.d("AvemeoAccessibility", "registerCallback bindingd")
             callbacks.register(callback)
         }
 
@@ -83,19 +82,18 @@ class AccessibilityBindingService : Service() {
     private fun createNotification(): Notification {
         val channelId = "accessibility_service_channel"
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Accessibility Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            channelId,
+            "Accessibility Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Služba běží")
-            .setContentText("Accessibility služba je aktivní")
+            .setContentTitle("Avemeo accessibility Service")
+            .setContentText("Avemeo accessibility service is running")
             .build()
     }
 

@@ -14,7 +14,7 @@ import android.view.accessibility.AccessibilityEvent
 class AvemeoAccessibilityService : AccessibilityService() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            //Log.d("AvemeoAccessibility", "AccessibilityService connected")
+            Log.d("AvemeoAccessibility", "AccessibilityService connected")
             val accessibilityService = IAccessibilityService.Stub.asInterface(service)
             try {
                 accessibilityService?.registerCallback(callback)
@@ -24,7 +24,7 @@ class AvemeoAccessibilityService : AccessibilityService() {
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            // Log.d("AvemeoAccessibility", "AccessibilityService disconnected")
+            Log.d("AvemeoAccessibility", "AccessibilityService disconnected")
         }
     }
 
@@ -56,12 +56,12 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        // Log.d("AvemeoAccessibility", "Service Interrupted")
+        Log.d("AvemeoAccessibility", "Service Interrupted")
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
         if (event != null && event.action == KeyEvent.ACTION_DOWN) {
-            // Log.d("AvemeoAccessibility", "Key event received: " + event.toString())
+            Log.d("AvemeoAccessibility", "Key event received: $event")
         }
 
         event?.let {
@@ -75,7 +75,7 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-       // Log.d("AvemeoAccessibility", "onAccessibilityEvent" + event.toString())
+       Log.d("AvemeoAccessibility", "onAccessibilityEvent" + event.toString())
         event?.let {
             val intent = Intent(this, AccessibilityBindingService::class.java)
             intent.putExtra("eventType", it.eventType)
