@@ -46,6 +46,10 @@ class AccessibilityBindingService : Service() {
                 avemeoLogger.logError("Failed to launch app: $packageName", e)
             }
         }
+
+        override fun setDebugLogging(enabled: Boolean) {
+            AccessibilityAidlManager.setDebugLogging(enabled)
+        }
     }
 
     private val handlerThread = HandlerThread("AccessibilityEventThread").apply { start() }

@@ -1,20 +1,28 @@
 package com.avemeo.accessibility_service
 
 import android.os.RemoteCallbackList
-import android.util.Log
 
 object AccessibilityAidlManager {
     private var callbacks: RemoteCallbackList<IAccessibilityCallback>? = null
     private const val TAG = "AccessibilityAidlManager"
     private var isBroadcasting = false
+    private var isDebugLoggingEnabled = false
 
     fun setCallbacks(callbacks: RemoteCallbackList<IAccessibilityCallback>) {
         this.callbacks = callbacks
     }
 
+    fun setDebugLogging(enabled: Boolean) {
+        isDebugLoggingEnabled = enabled
+        if (enabled) {
+            safeBroadcast { callback ->
+                callback.onLogDebugReceived(TAG, "Debug logging enabled")
+            }
+        }
+    }
+
     private fun safeBroadcast(block: (IAccessibilityCallback) -> Unit) {
         if (isBroadcasting) {
-            Log.w(TAG, "Broadcast already in progress, skipping")
             return
         }
 
@@ -26,8 +34,7 @@ object AccessibilityAidlManager {
                     for (i in 0 until n) {
                         try {
                             block(it.getBroadcastItem(i))
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed to execute broadcast block", e)
+                        } catch (_: Exception) {
                         }
                     }
                 } finally {
@@ -42,6 +49,9 @@ object AccessibilityAidlManager {
     fun notifyKeyEvent(keyCode: Int) {
         safeBroadcast { callback ->
             callback.onKeyEventReceived(keyCode)
+            if (isDebugLoggingEnabled) {
+                callback.onLogDebugReceived("Key event received: $keyCode", TAG)
+            }
         }
     }
 
@@ -51,20 +61,25 @@ object AccessibilityAidlManager {
             if (packageName != null) {
                 callback.onAccessibilityEventPackageNameReceived(packageName)
             }
+            if (isDebugLoggingEnabled) {
+                callback.onLogDebugReceived("Accessibility event received: type=$eventType, package=$packageName", TAG)
+            }
         }
     }
 
-    fun logDebug(tag: String, message: String) {
-        Log.d(tag, message)
-        safeBroadcast { callback ->
-            callback.onLogDebugReceived(message, tag)
+    fun logDebug(message: String, tag: String) {
+        if (isDebugLoggingEnabled) {
+            safeBroadcast { callback ->
+                callback.onLogDebugReceived(message, tag)
+            }
         }
     }
 
-    fun logError(tag: String, message: String) {
-        Log.e(tag, message)
-        safeBroadcast { callback ->
-            callback.onLogErrorReceived(message, tag)
+    fun logError(message: String, tag: String) {
+        if (isDebugLoggingEnabled) {
+            safeBroadcast { callback ->
+                callback.onLogErrorReceived(message, tag)
+            }
         }
     }
 } 
