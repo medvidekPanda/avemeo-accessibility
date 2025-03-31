@@ -7,28 +7,31 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
-import android.util.Log
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 
 class AvemeoAccessibilityService : AccessibilityService() {
+    private val avemeoLogger = AvemeoLogger();
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Log.d("AvemeoAccessibility", "AccessibilityService connected")
+            avemeoLogger.logDebug("AccessibilityService connected")
             val accessibilityService = IAccessibilityService.Stub.asInterface(service)
+
             try {
                 accessibilityService?.registerCallback(callback)
             } catch (e: Exception) {
-                Log.e("AvemeoAccessibility", "Failed to register callback", e)
+                avemeoLogger.logError("Failed to register callback", e)
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.d("AvemeoAccessibility", "AccessibilityService disconnected")
+            avemeoLogger.logDebug("AccessibilityService disconnected")
         }
     }
 
     private val callback = object : IAccessibilityCallback.Stub() {
+        override fun onLogDebugReceived(message: String, tag: String) {}
         override fun onKeyEventReceived(keyCode: Int) {}
         override fun onAccessibilityEventTypeReceived(eventType: Int) {}
         override fun onAccessibilityEventPackageNameReceived(packageName: String) {}
@@ -49,19 +52,19 @@ class AvemeoAccessibilityService : AccessibilityService() {
         intent.`package` = "com.avemeo.accessibility_service"
         try {
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-            Log.d("AvemeoAccessibility", "Bound to accessibility service")
+            avemeoLogger.logDebug("Bound to accessibility service")
         } catch (e: Exception) {
-            Log.e("AvemeoAccessibility", "Failed to bind to accessibility service", e)
+            avemeoLogger.logError("Failed to bind to accessibility service", e)
         }
     }
 
     override fun onInterrupt() {
-        Log.d("AvemeoAccessibility", "Service Interrupted")
+        avemeoLogger.logDebug("Service Interrupted")
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
         if (event != null && event.action == KeyEvent.ACTION_DOWN) {
-            Log.d("AvemeoAccessibility", "Key event received: $event")
+            avemeoLogger.logDebug("Key event received: $event")
         }
 
         event?.let {
@@ -75,7 +78,8 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-       Log.d("AvemeoAccessibility", "onAccessibilityEvent" + event.toString())
+        avemeoLogger.logDebug("Accessibility event received: $event")
+
         event?.let {
             val intent = Intent(this, AccessibilityBindingService::class.java)
             intent.putExtra("eventType", it.eventType)
@@ -95,7 +99,8 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     private fun onLaunchApp(packageName: String) {
-        Log.d("AvemeoAccessibility", "onLaunchApp: $packageName")
+        avemeoLogger.logDebug("Launching app: $packageName")
+
         try {
             val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
             launchIntent?.let { intent ->
@@ -103,7 +108,7 @@ class AvemeoAccessibilityService : AccessibilityService() {
                 startActivity(intent)
             }
         } catch (e: Exception) {
-            Log.e("AvemeoAccessibility", "Failed to launch app in AccessibilityService", e)
+            avemeoLogger.logError("Failed to launch app: $packageName", e)
         }
     }
 }

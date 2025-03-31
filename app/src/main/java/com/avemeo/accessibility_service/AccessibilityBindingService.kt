@@ -5,7 +5,6 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.RemoteCallbackList
-import android.util.Log
 import android.os.Handler
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,6 +14,8 @@ import android.os.HandlerThread
 
 class AccessibilityBindingService : Service() {
     private val callbacks = RemoteCallbackList<IAccessibilityCallback>()
+
+    private val avemeoLogger = AvemeoLogger(callbacks);
     private var shouldReconnect = true
 
     private companion object {
@@ -23,7 +24,7 @@ class AccessibilityBindingService : Service() {
 
     private val binder = object : IAccessibilityService.Stub() {
         override fun registerCallback(callback: IAccessibilityCallback) {
-            Log.d("AvemeoAccessibility", "registerCallback bindingd")
+            avemeoLogger.logDebug("registerCallback binding")
             callbacks.register(callback)
         }
 
@@ -31,29 +32,28 @@ class AccessibilityBindingService : Service() {
             callbacks.unregister(callback)
         }
 
-
         override fun launchApp(packageName: String) {
             try {
-                //Log.d("AvemeoAccessibility", "Successfully launched app pub: $packageName")
+                avemeoLogger.logDebug("Successfully launched app pub: $packageName")
+
                 val intent = Intent(applicationContext, AvemeoAccessibilityService::class.java)
                 intent.action = "LAUNCH_APP_ACTION"
                 intent.putExtra("launch_package_name", packageName)
                 startService(intent)
             } catch (e: Exception) {
-                Log.e("AvemeoAccessibility", "Failed to launch app: $packageName", e)
+                avemeoLogger.logError("Failed to launch app: $packageName", e)
             }
         }
     }
-
+    private val broadcastLock = Object()
 
     private val handlerThread = HandlerThread("AccessibilityEventThread").apply { start() }
     private val handler = Handler(handlerThread.looper)
 
+    private var isBroadcasting = false
+
     private val keyEventHandlerThread = HandlerThread("KeyEventThread").apply { start() }
     private val keyEventHandler = Handler(keyEventHandlerThread.looper)
-
-    private val broadcastLock = Object()
-    private var isBroadcasting = false
 
     override fun onBind(intent: Intent): IBinder {
         return binder
@@ -76,10 +76,9 @@ class AccessibilityBindingService : Service() {
                         notifyAccessibilityEvent(eventType, packageName)
                     }
                 }
-                
+
                 else -> {
-                    // Žádná známá extra data, nic neděláme
-                    Log.d("AvemeoAccessibility", "onStartCommand: Neznámý intent bez očekávaných extra dat")
+                    avemeoLogger.logDebug("onStartCommand: Unknown intent without expected extra data")
                 }
             }
         }
@@ -96,9 +95,7 @@ class AccessibilityBindingService : Service() {
         val channelId = "accessibility_service_channel"
 
         val channel = NotificationChannel(
-            channelId,
-            "Accessibility Service",
-            NotificationManager.IMPORTANCE_LOW
+            channelId, "Accessibility Service", NotificationManager.IMPORTANCE_LOW
         )
 
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -106,8 +103,7 @@ class AccessibilityBindingService : Service() {
 
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Avemeo accessibility Service")
-            .setContentText("Avemeo accessibility service is running")
-            .build()
+            .setContentText("Avemeo accessibility service is running").build()
     }
 
     private fun notifyAccessibilityEvent(eventType: Int, packageName: String?) {
@@ -116,7 +112,7 @@ class AccessibilityBindingService : Service() {
                 handler.postDelayed({ notifyAccessibilityEvent(eventType, packageName) }, 100)
                 return
             }
-            
+
             try {
                 isBroadcasting = true
                 val n = callbacks.beginBroadcast()
@@ -129,14 +125,14 @@ class AccessibilityBindingService : Service() {
                                 callback.onAccessibilityEventPackageNameReceived(packageName)
                             }
                         } catch (e: Exception) {
-                            Log.e("AvemeoAccessibility", "Failed to notify accessibility event", e)
+                            avemeoLogger.logError("Failed to notify accessibility event", e)
                         }
                     }
                 } finally {
                     callbacks.finishBroadcast()
                 }
             } catch (e: IllegalStateException) {
-                Log.e("AvemeoAccessibility", "Error in notifyAccessibilityEvent: ${e.message}")
+                avemeoLogger.logError("Error in notifyAccessibilityEvent", e)
             } finally {
                 isBroadcasting = false
             }
@@ -149,7 +145,7 @@ class AccessibilityBindingService : Service() {
                 keyEventHandler.postDelayed({ notifyKeyEvent(keyCode) }, 100)
                 return
             }
-            
+
             try {
                 isBroadcasting = true
                 val n = callbacks.beginBroadcast()
@@ -158,14 +154,14 @@ class AccessibilityBindingService : Service() {
                         try {
                             callbacks.getBroadcastItem(i).onKeyEventReceived(keyCode)
                         } catch (e: Exception) {
-                            Log.e("AvemeoAccessibility", "Failed to notify key event", e)
+                            avemeoLogger.logError("Failed to notify key event", e)
                         }
                     }
                 } finally {
                     callbacks.finishBroadcast()
                 }
             } catch (e: IllegalStateException) {
-                Log.e("AvemeoAccessibility", "Error in notifyKeyEvent: ${e.message}")
+                avemeoLogger.logError("Error in notifyKeyEvent", e)
             } finally {
                 isBroadcasting = false
             }
