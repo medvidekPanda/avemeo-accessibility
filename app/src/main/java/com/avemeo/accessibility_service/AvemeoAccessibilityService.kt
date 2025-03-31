@@ -31,7 +31,8 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     private val callback = object : IAccessibilityCallback.Stub() {
-        override fun onLogDebugReceived(message: String, tag: String) {}
+        override fun onLogDebugReceived(tag: String, message: String, ) {}
+        override fun onLogErrorReceived(tag: String, message: String) {}
         override fun onKeyEventReceived(keyCode: Int) {}
         override fun onAccessibilityEventTypeReceived(eventType: Int) {}
         override fun onAccessibilityEventPackageNameReceived(packageName: String) {}

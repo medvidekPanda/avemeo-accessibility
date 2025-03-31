@@ -4,10 +4,10 @@ class AvemeoLogger {
     private val logTag = "AvemeoAccessibility"
 
     fun logDebug(message: String) {
-        AccessibilityAidlManager.logDebug(message, logTag)
+        AccessibilityAidlManager.logDebug(logTag, message)
     }
 
     fun logError(message: String, exception: Exception) {
-        AccessibilityAidlManager.logError(message, exception, logTag)
+        AccessibilityAidlManager.logError(logTag, message)
     }
 }

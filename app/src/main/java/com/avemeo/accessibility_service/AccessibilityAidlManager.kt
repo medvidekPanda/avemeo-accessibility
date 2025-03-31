@@ -61,7 +61,10 @@ object AccessibilityAidlManager {
         }
     }
 
-    fun logError(message: String, exception: Exception, tag: String) {
-        Log.e(tag, message, exception)
+    fun logError(tag: String, message: String) {
+        Log.e(tag, message)
+        safeBroadcast { callback ->
+            callback.onLogErrorReceived(message, tag)
+        }
     }
 } 
