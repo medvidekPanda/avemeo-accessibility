@@ -54,14 +54,14 @@ object AccessibilityAidlManager {
         }
     }
 
-    fun logDebug(message: String, tag: String) {
+    fun logDebug(tag: String, message: String) {
         Log.d(tag, message)
         safeBroadcast { callback ->
             callback.onLogDebugReceived(message, tag)
         }
     }
 
-    fun logError(message: String, tag: String) {
+    fun logError(tag: String, message: String) {
         Log.e(tag, message)
         safeBroadcast { callback ->
             callback.onLogErrorReceived(message, tag)
