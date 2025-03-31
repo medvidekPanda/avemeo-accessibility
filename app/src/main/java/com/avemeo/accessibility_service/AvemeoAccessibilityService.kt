@@ -20,6 +20,7 @@ class AvemeoAccessibilityService : AccessibilityService() {
 
             try {
                 accessibilityService?.registerCallback(callback)
+                avemeoLogger.logDebug("Callback registered successfully")
             } catch (e: Exception) {
                 avemeoLogger.logError("Failed to register callback", e)
             }
@@ -40,6 +41,8 @@ class AvemeoAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        avemeoLogger.logDebug("AccessibilityService onServiceConnected called")
+        
         val info = AccessibilityServiceInfo()
         info.apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
@@ -48,11 +51,12 @@ class AvemeoAccessibilityService : AccessibilityService() {
             flags = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
         }
         serviceInfo = info
+        avemeoLogger.logDebug("AccessibilityServiceInfo configured")
 
         val intent = Intent("com.avemeo.accessibility_service.BIND")
         intent.`package` = "com.avemeo.accessibility_service"
         try {
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
             avemeoLogger.logDebug("Bound to accessibility service")
         } catch (e: Exception) {
             avemeoLogger.logError("Failed to bind to accessibility service", e)
@@ -64,35 +68,35 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
-        if (event != null && event.action == KeyEvent.ACTION_DOWN) {
-            avemeoLogger.logDebug("Key event received: $event")
-        }
-
         event?.let {
             if (it.action == KeyEvent.ACTION_DOWN) {
+                avemeoLogger.logDebug("Key event received: ${it.keyCode}")
                 val intent = Intent(this, AccessibilityBindingService::class.java)
                 intent.putExtra("keyCode", it.keyCode)
                 startService(intent)
+                avemeoLogger.logDebug("Key event sent to AccessibilityBindingService")
             }
         }
         return super.onKeyEvent(event)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        avemeoLogger.logDebug("Accessibility event received: $event")
-
         event?.let {
+            avemeoLogger.logDebug("Accessibility event received: type=${it.eventType}, package=${it.packageName}")
             val intent = Intent(this, AccessibilityBindingService::class.java)
             intent.putExtra("eventType", it.eventType)
             intent.putExtra("packageName", it.packageName?.toString())
             startService(intent)
+            avemeoLogger.logDebug("Accessibility event sent to AccessibilityBindingService")
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        avemeoLogger.logDebug("onStartCommand called with action: ${intent?.action}")
         if (intent?.action == "LAUNCH_APP_ACTION") {
             val packageName = intent.getStringExtra("launch_package_name")
             packageName?.let {
+                avemeoLogger.logDebug("Launching app from onStartCommand: $it")
                 onLaunchApp(it)
             }
         }
@@ -100,13 +104,18 @@ class AvemeoAccessibilityService : AccessibilityService() {
     }
 
     private fun onLaunchApp(packageName: String) {
-        avemeoLogger.logDebug("Launching app: $packageName")
-
         try {
+            avemeoLogger.logDebug("Launching app: $packageName")
             val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
             launchIntent?.let { intent ->
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
+                avemeoLogger.logDebug("App launch intent sent")
+            } ?: run {
+                avemeoLogger.logError(
+                    "Launch intent is null for package: $packageName",
+                    exception = TODO()
+                )
             }
         } catch (e: Exception) {
             avemeoLogger.logError("Failed to launch app: $packageName", e)
