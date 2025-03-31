@@ -52,6 +52,9 @@ class AccessibilityBindingService : Service() {
     private val keyEventHandlerThread = HandlerThread("KeyEventThread").apply { start() }
     private val keyEventHandler = Handler(keyEventHandlerThread.looper)
 
+    private val broadcastLock = Object()
+    private var isBroadcasting = false
+
     override fun onBind(intent: Intent): IBinder {
         return binder
     }
@@ -60,13 +63,23 @@ class AccessibilityBindingService : Service() {
         intent?.let {
             when {
                 it.hasExtra("keyCode") -> {
-                    notifyKeyEvent(it.getIntExtra("keyCode", 0))
+                    val keyCode = it.getIntExtra("keyCode", 0)
+                    keyEventHandler.post {
+                        notifyKeyEvent(keyCode)
+                    }
                 }
 
                 it.hasExtra("eventType") -> {
                     val eventType = it.getIntExtra("eventType", 0)
                     val packageName = it.getStringExtra("packageName")
-                    notifyAccessibilityEvent(eventType, packageName)
+                    handler.post {
+                        notifyAccessibilityEvent(eventType, packageName)
+                    }
+                }
+                
+                else -> {
+                    // Žádná známá extra data, nic neděláme
+                    Log.d("AvemeoAccessibility", "onStartCommand: Neznámý intent bez očekávaných extra dat")
                 }
             }
         }
@@ -98,31 +111,63 @@ class AccessibilityBindingService : Service() {
     }
 
     private fun notifyAccessibilityEvent(eventType: Int, packageName: String?) {
-        handler.post {
-            val n = callbacks.beginBroadcast()
+        synchronized(broadcastLock) {
+            if (isBroadcasting) {
+                handler.postDelayed({ notifyAccessibilityEvent(eventType, packageName) }, 100)
+                return
+            }
+            
             try {
-                for (i in 0 until n) {
-                    val callback = callbacks.getBroadcastItem(i)
-                    callback.onAccessibilityEventTypeReceived(eventType)
-                    if (packageName != null) {
-                        callback.onAccessibilityEventPackageNameReceived(packageName)
+                isBroadcasting = true
+                val n = callbacks.beginBroadcast()
+                try {
+                    for (i in 0 until n) {
+                        try {
+                            val callback = callbacks.getBroadcastItem(i)
+                            callback.onAccessibilityEventTypeReceived(eventType)
+                            if (packageName != null) {
+                                callback.onAccessibilityEventPackageNameReceived(packageName)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AvemeoAccessibility", "Failed to notify accessibility event", e)
+                        }
                     }
+                } finally {
+                    callbacks.finishBroadcast()
                 }
+            } catch (e: IllegalStateException) {
+                Log.e("AvemeoAccessibility", "Error in notifyAccessibilityEvent: ${e.message}")
             } finally {
-                callbacks.finishBroadcast()
+                isBroadcasting = false
             }
         }
     }
 
     private fun notifyKeyEvent(keyCode: Int) {
-        keyEventHandler.post {
-            val n = callbacks.beginBroadcast()
+        synchronized(broadcastLock) {
+            if (isBroadcasting) {
+                keyEventHandler.postDelayed({ notifyKeyEvent(keyCode) }, 100)
+                return
+            }
+            
             try {
-                for (i in 0 until n) {
-                    callbacks.getBroadcastItem(i).onKeyEventReceived(keyCode)
+                isBroadcasting = true
+                val n = callbacks.beginBroadcast()
+                try {
+                    for (i in 0 until n) {
+                        try {
+                            callbacks.getBroadcastItem(i).onKeyEventReceived(keyCode)
+                        } catch (e: Exception) {
+                            Log.e("AvemeoAccessibility", "Failed to notify key event", e)
+                        }
+                    }
+                } finally {
+                    callbacks.finishBroadcast()
                 }
+            } catch (e: IllegalStateException) {
+                Log.e("AvemeoAccessibility", "Error in notifyKeyEvent: ${e.message}")
             } finally {
-                callbacks.finishBroadcast()
+                isBroadcasting = false
             }
         }
     }
